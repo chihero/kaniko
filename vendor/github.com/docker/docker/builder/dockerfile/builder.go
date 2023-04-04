@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"sort"
 	"strings"
 
@@ -257,10 +256,10 @@ func (b *Builder) dispatchDockerfileWithCancellation(parseResult []instructions.
 		totalCommands += len(stage.Commands)
 	}
 	shlex := shell.NewLex(escapeToken)
-	for _, meta := range metaArgs {
-		currentCommandIndex = printCommand(b.Stdout, currentCommandIndex, totalCommands, &meta)
+	for i := range metaArgs {
+		currentCommandIndex = printCommand(b.Stdout, currentCommandIndex, totalCommands, &metaArgs[i])
 
-		err := processMetaArg(meta, shlex, buildArgs)
+		err := processMetaArg(metaArgs[i], shlex, buildArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -268,7 +267,8 @@ func (b *Builder) dispatchDockerfileWithCancellation(parseResult []instructions.
 
 	stagesResults := newStagesBuildResults()
 
-	for _, stage := range parseResult {
+	for _, s := range parseResult {
+		stage := s
 		if err := stagesResults.checkStageNameAvailable(stage.Name); err != nil {
 			return nil, err
 		}
@@ -348,8 +348,8 @@ func BuildFromConfig(config *container.Config, changes []string, os string) (*co
 		}
 	}
 
-	b.Stdout = ioutil.Discard
-	b.Stderr = ioutil.Discard
+	b.Stdout = io.Discard
+	b.Stderr = io.Discard
 	b.disableCommit = true
 
 	var commands []instructions.Command
